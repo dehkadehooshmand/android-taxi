@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="btn_text_size">17dp</dimen>
+    <dimen name="pin_dimens">320dp</dimen>
+    <dimen name="margin_top_markrt">300dp</dimen>
+</resources>

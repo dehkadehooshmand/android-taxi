@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backgrount_gradient"
+    tools:context=".ProfileActivity"
+    android:layoutDirection="ltr">
+
+    <include layout="@layout/toolbar"
+       />
+
+    <ImageView
+        android:id="@+id/pro_img"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        android:layout_below="@+id/toolbar"
+        android:layout_centerHorizontal="true"
+        app:srcCompat="@drawable/ic_man"
+        />
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/pro_img"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="32dp"
+        android:text="نام و نام خانوادگی :"
+        android:textColor="@color/white" />
+
+    <EditText
+        android:id="@+id/txt_name"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@+id/title"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="8dp"
+        android:hint="نام کاربر در این مکان قرار می گیرد"
+        android:textColorHint="@color/grey_60"
+        android:padding="8dp"
+        android:layout_marginRight="32dp"
+        android:background="@drawable/edittextblue_background"
+        android:textSize="15dp" />
+    <TextView
+        android:id="@+id/title2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txt_name"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="32dp"
+        android:text="شماره تماس :"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/txt_mobile"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@+id/title2"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="8dp"
+        android:text="0912525899"
+        android:padding="8dp"
+        android:layout_marginRight="32dp"
+        android:background="@drawable/edittextblue_background"
+        android:textSize="15dp" />
+    <TextView
+        android:id="@+id/title3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txt_mobile"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="32dp"
+        android:text="ایمیل :"
+        android:textColor="@color/white" />
+
+    <EditText
+        android:id="@+id/txt_email"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@+id/title3"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="8dp"
+        android:hint="idpz@yahoo.com"
+        android:inputType="textEmailAddress"
+        android:layout_marginRight="32dp"
+        android:textColorHint="@color/grey_60"
+
+        android:padding="8dp"
+        android:background="@drawable/edittextblue_background"
+        android:textSize="15dp" />
+    <TextView
+        android:id="@+id/title4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txt_email"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="32dp"
+        android:text="جنسیت :"
+        android:textColor="@color/white" />
+
+    <Spinner
+        android:id="@+id/gender"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@+id/title4"
+        android:layout_marginLeft="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="32dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/edittextblue_background"
+        android:textSize="15dp"
+        android:spinnerMode="dropdown"/>
+    <Button
+        android:id="@+id/btn_confrim"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:text="اعمال تغییرات "
+        android:layout_below="@+id/gender"
+        android:background="@drawable/btn_background"
+        android:textColor="@color/white" />
+</RelativeLayout>

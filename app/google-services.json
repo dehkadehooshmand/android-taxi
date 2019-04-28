@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "394268422927",
+    "firebase_url": "https://passenger-d0533.firebaseio.com",
+    "project_id": "passenger-d0533",
+    "storage_bucket": "passenger-d0533.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394268422927:android:d42f28e10ba3b637",
+        "android_client_info": {
+          "package_name": "ir.idpz.taxi.user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "394268422927-enjqil0jk73hk1q5eppth7omgse3cbfe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ir.idpz.taxi.user",
+            "certificate_hash": "0e968309c281837d2d9455054710b5e14a426db6"
+          }
+        },
+        {
+          "client_id": "394268422927-ocja0qt3cj3tqod9445og2hrtsan8esg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl58JUekArhFNdfBGG-8K266WbnBSTeIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "394268422927-ocja0qt3cj3tqod9445og2hrtsan8esg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
