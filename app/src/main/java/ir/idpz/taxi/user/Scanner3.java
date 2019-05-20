@@ -36,7 +36,10 @@ public class Scanner3 extends AppCompatActivity implements BarcodeReader.Barcode
         // getting barcode instance
 
 
-        barcodeReader = (BarcodeReader) getSupportFragmentManager().findFragmentById(R.id.barcode_fragment);
+        try {
+            barcodeReader = (BarcodeReader) getSupportFragmentManager().findFragmentById(R.id.barcode_fragment);
+        } catch (Exception e) {
+        }
 
 
         /***
@@ -81,13 +84,11 @@ public class Scanner3 extends AppCompatActivity implements BarcodeReader.Barcode
 //        id = id.replace("id=", "");
 
 
-
-
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 getUserData(type, id);
-               // Toast.makeText(getApplicationContext(), "Barcode: " + barcode.displayValue, Toast.LENGTH_SHORT).show();
+                // Toast.makeText(getApplicationContext(), "Barcode: " + barcode.displayValue, Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -134,7 +135,7 @@ public class Scanner3 extends AppCompatActivity implements BarcodeReader.Barcode
         params.put("type", type);
         params.put("api_token", Helpers.getSharePrf("api_token"));
         String url = Helpers.baseUrl + "qrcode";
-        AsyncHttpClient client=new AsyncHttpClient();
+        AsyncHttpClient client = new AsyncHttpClient();
         client.post(url, params, new TextHttpResponseHandler() {
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {

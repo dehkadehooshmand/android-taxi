@@ -60,7 +60,7 @@ public class ShowLineAdapter extends RecyclerView.Adapter<ShowLineAdapter.MyView
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final MyViewHolder holder, final int position) {
 
         line = lines.get(position);
 
@@ -88,7 +88,7 @@ public class ShowLineAdapter extends RecyclerView.Adapter<ShowLineAdapter.MyView
         holder.checkBox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mListener.onItemClick(v, position, lines.get(position));
+                mListener.onItemClick(holder.checkBox,v, position, lines.get(position));
             }
         });
 
@@ -169,7 +169,7 @@ public class ShowLineAdapter extends RecyclerView.Adapter<ShowLineAdapter.MyView
     }
 
     public interface OnItemClickListener {
-        void onItemClick(View v, int position, Object object);
+        void onItemClick(CheckBox checkBox,View v, int position, Object object);
     }
 
 

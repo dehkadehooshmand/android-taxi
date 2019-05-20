@@ -11,7 +11,6 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -23,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
-import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
@@ -45,26 +43,24 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.SubMenu;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import ir.idpz.taxi.user.Adapers.MarkerWindowInfoAdapter;
 import ir.idpz.taxi.user.Adapers.ShowLineAdapter;
-import ir.idpz.taxi.user.CodeScannerActivity;
 import ir.idpz.taxi.user.LoginActivity;
 import ir.idpz.taxi.user.Models.Area;
 import ir.idpz.taxi.user.Models.CrruentTaxis;
@@ -74,9 +70,6 @@ import ir.idpz.taxi.user.Models.Station;
 
 import com.example.idpz_lenovo.passengertexi.R;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -103,14 +96,12 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.wang.avi.AVLoadingIndicatorView;
-import com.warkiz.widget.IndicatorSeekBar;
-import com.warkiz.widget.IndicatorStayLayout;
-import com.warkiz.widget.OnSeekChangeListener;
-import com.warkiz.widget.SeekParams;
+import com.xw.repo.BubbleSeekBar;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -124,7 +115,6 @@ import java.util.List;
 import cz.msebera.android.httpclient.Header;
 import ir.idpz.taxi.user.Models.Taxi;
 import ir.idpz.taxi.user.ProfileActivity;
-import ir.idpz.taxi.user.QrReaderActivity;
 import ir.idpz.taxi.user.Scanner3;
 import ir.idpz.taxi.user.Utils.AppController;
 import ir.idpz.taxi.user.Utils.CustomTypefaceSpan;
@@ -197,7 +187,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     int alarmDist;
     TextView txtDistance;
     CardView search_layout;
-    LinearLayout seekbar_layout;
+    RelativeLayout seekbar_layout;
     boolean flag = false;
     Location mLastKnownLocation;
     Button confrimDest;
@@ -209,11 +199,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     int flag2;
 
+    Polyline polyline;
+    List<Polyline> polylines = new ArrayList<>();
+    List<Marker> markers = new ArrayList<>();
+    CheckBox checkBox;
+    TextView name, title;
+    private int play_time = 0;
+
+    MediaPlayer mp;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.navigation_drawer);
 
+
+        checkBox=findViewById(R.id.check);
+        name = findViewById(R.id.name);
+
+        title = findViewById(R.id.title);
 
         person1 = findViewById(R.id.p1);
         person2 = findViewById(R.id.p2);
@@ -233,11 +237,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("flag", "true");
 //        getNearestTaxis(7);
-        locationUpdate.StartSchedule(MapsActivity.this, 10000, 7);//todo line.getId(
+        locationUpdate.StartSchedule(MapsActivity.this, 10000);
 
 
         editor.commit();
-
 
         avi = findViewById(R.id.avi);
         stopAnim();
@@ -294,70 +297,107 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         seekbar_layout = findViewById(R.id.crd_seekbar);
 
 
-        final IndicatorSeekBar seekBar = findViewById(R.id.seek_bar);
+        BubbleSeekBar bubbleSeekBar = findViewById(R.id.seek_bar);
 
-
-        seekBar.setOnSeekChangeListener(new OnSeekChangeListener() {
-
+        bubbleSeekBar.setOnProgressChangedListener(new BubbleSeekBar.OnProgressChangedListener() {
             @Override
-            public void onSeeking(SeekParams seekParams) {
-                Log.d(TAG, "onSeeking: " + seekParams.progress);
-                drawCircle(seekParams.progress);
-                alarmDist = seekParams.progress;
-//                SharedPreferences.Editor SP;
-//                SP = PreferenceManager.getDefaultSharedPreferences(AppController.getAppContext()).edit();
-//
-//                SP.putString("alarm_len", String.valueOf(seekParams.progress * 1000));
-//                SP.apply();
-//todo should get from server
-                // getNearestTaxis(seekParams.progress*1000);
+            public void onProgressChanged(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat, boolean fromUser) {
 
-                if (seekParams.progress == 2) {
+                Log.d(TAG, "onSeeking: " + progress);
+                drawCircle(progress);
+                alarmDist = progress;
+                if (progress == 2) {
 
 
-                } else if (seekParams.progress == 4) {
+                } else if (progress == 4) {
 
-                } else if (seekParams.progress == 6) {
+                } else if (progress == 6) {
 
-                } else if (seekParams.progress == 8) {
+                } else if (progress == 8) {
 
-                } else if (seekParams.progress == 10) {
+                } else if (progress == 10) {
 
                 }
-
-
-//                    List<Taxi> taxis = new ArrayList<>();
-//                MarkerOptions markerOptions = new MarkerOptions();
-//
-//                markerOptions.position(new LatLng(35.744964, 50.905066)).icon(BitmapDescriptorFactory.fromResource(R.drawable.car));
-//                Marker marker = mMap.addMarker(markerOptions);
-//                // marker.setTag(taxi.getId());
-//                Taxi taxi = new Taxi();
-//                taxi.setLat(35.744964);
-//                taxi.setLng(50.905066);
-//                taxis.add(taxi);
-//
-//                MarkerWindowInfoAdapter markerInfoWindowAdapter = new MarkerWindowInfoAdapter(AppController.getAppContext(), taxis);
-//                mMap.setInfoWindowAdapter(markerInfoWindowAdapter);
-////
-
             }
 
             @Override
-            public void onStartTrackingTouch(IndicatorSeekBar seekBar) {
+            public void getProgressOnActionUp(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat) {
+
                 try {
                     LatLng homeLoc = new LatLng(mCenterLatLong.latitude, mCenterLatLong.longitude);
                 } catch (Exception e) {
                 }
-                // mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(homeLoc, 12));
-
-
             }
 
             @Override
-            public void onStopTrackingTouch(IndicatorSeekBar seekBar) {
+            public void getProgressOnFinally(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat, boolean fromUser) {
+
             }
         });
+//        final IndicatorSeekBar seekBar = findViewById(R.id.seek_bar);
+//
+//
+//        seekBar.setOnSeekChangeListener(new OnSeekChangeListener() {
+//
+//            @Override
+//            public void onSeeking(SeekParams seekParams) {
+//                Log.d(TAG, "onSeeking: " + seekParams.progress);
+//                drawCircle(seekParams.progress);
+//                alarmDist = seekParams.progress;
+////                SharedPreferences.Editor SP;
+////                SP = PreferenceManager.getDefaultSharedPreferences(AppController.getAppContext()).edit();
+////
+////                SP.putString("alarm_len", String.valueOf(seekParams.progress * 1000));
+////                SP.apply();
+////todo should get from server
+//                // getNearestTaxis(seekParams.progress*1000);
+//
+//                if (seekParams.progress == 2) {
+//
+//
+//                } else if (seekParams.progress == 4) {
+//
+//                } else if (seekParams.progress == 6) {
+//
+//                } else if (seekParams.progress == 8) {
+//
+//                } else if (seekParams.progress == 10) {
+//
+//                }
+//
+//
+////                    List<Taxi> taxis = new ArrayList<>();
+////                MarkerOptions markerOptions = new MarkerOptions();
+////
+////                markerOptions.position(new LatLng(35.744964, 50.905066)).icon(BitmapDescriptorFactory.fromResource(R.drawable.car));
+////                Marker marker = mMap.addMarker(markerOptions);
+////                // marker.setTag(taxi.getId());
+////                Taxi taxi = new Taxi();
+////                taxi.setLat(35.744964);
+////                taxi.setLng(50.905066);
+////                taxis.add(taxi);
+////
+////                MarkerWindowInfoAdapter markerInfoWindowAdapter = new MarkerWindowInfoAdapter(AppController.getAppContext(), taxis);
+////                mMap.setInfoWindowAdapter(markerInfoWindowAdapter);
+//////
+//
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(IndicatorSeekBar seekBar) {
+//                try {
+//                    LatLng homeLoc = new LatLng(mCenterLatLong.latitude, mCenterLatLong.longitude);
+//                } catch (Exception e) {
+//                }
+//                // mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(homeLoc, 12));
+//
+//
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(IndicatorSeekBar seekBar) {
+//            }
+//        });
 
 
         //new IndicatorStayLayout(MapsActivity.this).attachTo(seekBar);
@@ -524,6 +564,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //            if(Helpers.getSharePrf("PassengerTip").equals("1"))
 //                chooseLoc();
 //        }
+
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (checkBox.isChecked()) {
+                    try {
+                        mp.stop();
+                    } catch (Exception e) {
+                    }
+
+                } else play_time = 0;
+            }
+        });
+
+
     }
 
 
@@ -1050,7 +1105,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             mLastKnownLocation = LocationServices.
                     FusedLocationApi.getLastLocation(mGoogleApiClient);
-            Log.d("parisaa",mLastKnownLocation.toString());
+            Log.d("parisaa", mLastKnownLocation.toString());
             if (mLastKnownLocation != null) {
                 LatLng latLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
 //                StaticVars.getCurrentRequest().setLat(mLastKnownLocation.getLatitude());
@@ -1148,7 +1203,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
          */
 
         RequestParams params = new RequestParams();
-        params.put("id", id);
+        params.put("id", 20);
         params.put("api_token", Helpers.getSharePrf("api_token"));
         Helpers.client.post("http://admin.idpz.ir/api/getlines", params, new TextHttpResponseHandler() {
             @Override
@@ -1162,8 +1217,132 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 try {
 
+                    if (responseString.contains("notOk")) {
 
-                    initComponent(responseString);
+                        NoLineAlert();
+                    } else {
+
+                        String test = "[\n" +
+                                "    {\n" +
+                                "        \"id\": 41,\n" +
+                                "        \"name\": \"میدان انقلاب بیمارستان قلب\",\n" +
+                                "        \"color\": \"ff00bf\",\n" +
+                                "        \"Stations\": [\n" +
+                                "            {\n" +
+                                "                \"id\": 462,\n" +
+                                "                \"lat\": 35.701427,\n" +
+                                "                \"lng\": 51.391068,\n" +
+                                "                \"name\": \"میدان انقلاب\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 463,\n" +
+                                "                \"lat\": 35.703533,\n" +
+                                "                \"lng\": 51.390812,\n" +
+                                "                \"name\": \"ایستگاه1\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 464,\n" +
+                                "                \"lat\": 35.708153,\n" +
+                                "                \"lng\": 51.390232,\n" +
+                                "                \"name\": \"ایستگاه2\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 465,\n" +
+                                "                \"lat\": 35.714195,\n" +
+                                "                \"lng\": 51.389435,\n" +
+                                "                \"name\": \"ایستگاه3\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 466,\n" +
+                                "                \"lat\": 35.717499,\n" +
+                                "                \"lng\": 51.389442,\n" +
+                                "                \"name\": \"ایستگاه4\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 467,\n" +
+                                "                \"lat\": 35.719101,\n" +
+                                "                \"lng\": 51.38916,\n" +
+                                "                \"name\": \"بیمارستان قلب\"\n" +
+                                "            }\n" +
+                                "        ]\n" +
+                                "    },\n" +
+                                "    {\n" +
+                                "        \"id\": 42,\n" +
+                                "        \"name\": \"میدان انقلاب میدان فاطمی\",\n" +
+                                "        \"color\": \"ff8000\",\n" +
+                                "        \"Stations\": [\n" +
+                                "            {\n" +
+                                "                \"id\": 468,\n" +
+                                "                \"lat\": 35.700832,\n" +
+                                "                \"lng\": 51.39209,\n" +
+                                "                \"name\": \"میدان انقلاب\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 469,\n" +
+                                "                \"lat\": 35.701172,\n" +
+                                "                \"lng\": 51.400448,\n" +
+                                "                \"name\": \"ایستگاه1\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 470,\n" +
+                                "                \"lat\": 35.701443,\n" +
+                                "                \"lng\": 51.400349,\n" +
+                                "                \"name\": \"ایستگاه2\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 471,\n" +
+                                "                \"lat\": 35.708954,\n" +
+                                "                \"lng\": 51.397076,\n" +
+                                "                \"name\": \"پارک لاله\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 472,\n" +
+                                "                \"lat\": 35.715904,\n" +
+                                "                \"lng\": 51.394169,\n" +
+                                "                \"name\": \"ایستگاه4\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 473,\n" +
+                                "                \"lat\": 35.719639,\n" +
+                                "                \"lng\": 51.404808,\n" +
+                                "                \"name\": \"میدان فاطمی\"\n" +
+                                "            }\n" +
+                                "        ]\n" +
+                                "    },\n" +
+                                "    {\n" +
+                                "        \"id\": 43,\n" +
+                                "        \"name\": \"چمران میدان فاطمی\",\n" +
+                                "        \"color\": \"0000cc\",\n" +
+                                "        \"Stations\": [\n" +
+                                "            {\n" +
+                                "                \"id\": 474,\n" +
+                                "                \"lat\": 35.712017,\n" +
+                                "                \"lng\": 51.380085,\n" +
+                                "                \"name\": \"چمران\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 475,\n" +
+                                "                \"lat\": 35.712574,\n" +
+                                "                \"lng\": 51.382359,\n" +
+                                "                \"name\": \"ایستگاه\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 476,\n" +
+                                "                \"lat\": 35.714123,\n" +
+                                "                \"lng\": 51.389355,\n" +
+                                "                \"name\": \"خیابان کارگر\"\n" +
+                                "            },\n" +
+                                "            {\n" +
+                                "                \"id\": 477,\n" +
+                                "                \"lat\": 35.719639,\n" +
+                                "                \"lng\": 51.404793,\n" +
+                                "                \"name\": \"میدان فاطمی\"\n" +
+                                "            }\n" +
+                                "        ]\n" +
+                                "    }\n" +
+                                "]";
+
+                        initComponent(responseString);
 //                    Line[] areaModel = Helpers.gson.fromJson(responseString, Line[].class);
 //                    if (location_time < location_int)
 //                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -1174,6 +1353,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                    for (Line line : lines) {
 //                        drawLine(line);
 //                    }
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "onSuccess: ", e);
                 }
@@ -1264,8 +1444,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     public void drawLine(Line line) {
-        String color = "#" + line.getColor();
-        options = new PolylineOptions().width(5).color(Color.parseColor(color)).geodesic(true);
+        options = new PolylineOptions().width(5).color(Color.parseColor(line.getColor())).geodesic(true);
+
 
         stations = line.getStations();
         for (Station station : stations) {
@@ -1276,9 +1456,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         }
-        mMap.addPolyline(options);
+        polyline = mMap.addPolyline(options);
+        polyline.setTag(line.getId());
+        polylines.add(polyline);
     }
 
+
+    public void removeLine(Line line) {
+
+        for (Polyline polyline : polylines) {
+
+            try {
+                if (polyline.getTag().toString().equals(String.valueOf(line.getId()))) {
+                    polyline.remove();
+                    polylines.remove(polyline);
+                }
+            } catch (Exception e) {
+            }
+        }
+
+    }
 
     public void newRequest() {
 
@@ -1394,20 +1591,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 //    Toast.makeText(MapsActivity.this, responseString.toString(), Toast.LENGTH_SHORT).show();
                 Log.d("latlng", responseString);
-                showTaxi(responseString);
-            }
-        });
-    }
 
-    public void showTaxi(String response) {
-        try {
-            //  stopAnim();
-
-            CrruentTaxis currentTaxis = Helpers.gson.fromJson(response, CrruentTaxis.class);
-
-
-            if (response.contains("ok")) {
-
+                CrruentTaxis currentTaxis = Helpers.gson.fromJson(responseString, CrruentTaxis.class);
                 final List<Taxi> taxis = currentTaxis.getTaxis();
 
                 for (final Taxi taxi : taxis) {
@@ -1500,6 +1685,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             return false;
                         }
                     });
+                }
+            }
+        });
+    }
+
+    public void setAlarm(String response) {
+        try {
+            //  stopAnim();
+
+            CrruentTaxis currentTaxis = Helpers.gson.fromJson(response, CrruentTaxis.class);
+
+
+            if (response.contains("ok")) {
+
+                final List<Taxi> taxis = currentTaxis.getTaxis();
+
+                for (final Taxi taxi : taxis) {
+
                     final MediaPlayer mp = MediaPlayer.create(this, R.raw.beep);
 
                     Location location = new Location("");
@@ -1513,26 +1716,133 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Log.d("parisa", String.valueOf(alarmDist));
                     Log.d("parisa", String.valueOf(location));
                     Log.d("parisa", String.valueOf(mLocation));
-                    if (location.distanceTo(mLocation) < alarmDist)
-                        mp.start();
+                    if (location.distanceTo(mLocation) < alarmDist && checkBox.isChecked()) {
+
+                        for (Polyline polyline : polylines) {
+                            try {
+                                //faghat otobosaye khati ke entekhab kardim alarm mizane
+                                if (polyline.getTag().toString().equals(taxi.getStationId()))
+                                    if (play_time < 2) {
+
+                                        mp.start();
+
+                                    } else checkBox.setChecked(false);
+                            } catch (Exception e) {
+                            }
+                        }
+                        play_time = play_time + 1;
+                        Log.d("parisa", "start");
+
+                    }
 
                 }
 
-//                    for (final Taxi taxi : taxis) {
-////                        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-////                            @Override
-////                            public void onInfoWindowClick(Marker marker) {
-////
-////                                if (taxi.getId().equals(marker.getTag())) {
-////                                    newRequest();
-////                                    taxi.getId();
-////
-////
-////                                    choose_taxi(taxi.getId().toString(), taxi.getToken());
-////                                }
-////                            }
-////                        });
-//                    }
+
+                for (final Taxi taxi : taxis) {
+                    for (Polyline polyline : polylines) {
+                        if (polyline.getTag().toString().equals(taxi.getStationId())) {
+                            taxi.getLat();
+                            taxi.getLng();
+
+
+                            taxi.getCapacity();
+
+                            MarkerOptions markerOptions = new MarkerOptions();
+
+                            markerOptions.position(new LatLng(taxi.getLat(), taxi.getLng()))//.icon(bitmapDescriptorFromVector(MapsActivity.this, R.drawable.ic_logo_taxi_front));
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.logo_taxi_front)).flat(true);
+                            Marker marker = mMap.addMarker(markerOptions);
+
+                            markers.add(marker);
+
+                            marker.setTag(taxi.getId());
+
+                            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                                @Override
+                                public boolean onMarkerClick(final Marker marker) {
+
+                                    try {
+
+                                        // function returnTaxi daghighan oon taxi ke click shode ro miyare
+                                        getCapacity(returnTaxi(marker.getTag().toString(), taxis));
+
+
+                                        count = 1;
+                                        capacity_btn.setText("1");
+
+                                        animation = AnimationUtils.loadAnimation(getApplicationContext(),
+                                                R.anim.slide_out_buttom);
+                                        choose_taxi_layout.setAnimation(animation);
+                                        choose_taxi_layout.setVisibility(View.VISIBLE);
+                                        name.setText(returnTaxi(marker.getTag().toString(), taxis).getFirstName() + " " + returnTaxi(marker.getTag().toString(), taxis).getLastName());
+                                        int empty_capacity = 4 - returnTaxi(marker.getTag().toString(), taxis).getCapacity();
+
+                                        title.setText("ظرفیت خالی " + empty_capacity + " نفر");
+
+                                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
+
+                                        confrimDest.setVisibility(View.INVISIBLE);
+                                        pluse.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                if (count < 4)
+                                                    count++;
+                                                capacity_btn.setText(String.valueOf(count));
+
+                                            }
+                                        });
+
+
+                                        minuse.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                if (count > 1 && count != 1)
+                                                    count--;
+                                                capacity_btn.setText(String.valueOf(count));
+                                            }
+                                        });
+
+
+                                        btn_choose_taxi.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+
+                                                if (Helpers.isNetworkAvailable(mContext))
+
+                                                    choose_taxi(returnTaxi(marker.getTag().toString(), taxis), String.valueOf(count));
+
+                                                else Helpers.noInternetDialog();
+
+                                                animation = AnimationUtils.loadAnimation(getApplicationContext(),
+                                                        R.anim.slide_down);
+                                                choose_taxi_layout.setAnimation(animation);
+
+                                                choose_taxi_layout.setVisibility(View.INVISIBLE);
+
+                                                //     confrimDest.setVisibility(View.VISIBLE);
+
+                                            }
+                                        });
+
+                                        cancel_btn.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                animation = AnimationUtils.loadAnimation(getApplicationContext(),
+                                                        R.anim.slide_down);
+                                                choose_taxi_layout.setAnimation(animation);
+                                                choose_taxi_layout.setVisibility(View.INVISIBLE);
+                                                //  confrimDest.setVisibility(View.VISIBLE);
+                                            }
+                                        });
+                                    } catch (Exception e) {
+                                    }
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                }
 
             } else {
 
@@ -1741,14 +2051,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // get the bottom sheet view
         LinearLayout llBottomSheet = findViewById(R.id.linear_bottomsheet);
 
-        Location myLoc = new Location("");
-        try {
-            myLoc.setLatitude(Double.parseDouble("35.713509"));
 
-
-            myLoc.setLongitude(Double.parseDouble("51.385377"));
-        } catch (Exception e) {
-        }
         final Line[] lines = Helpers.gson.fromJson(test, Line[].class);
 
         for (Line line : lines) {
@@ -1759,7 +2062,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     mMap.addMarker(new MarkerOptions()
                             .position(new LatLng(station.getLat(), station.getLng()))
-                            .icon(bitmapDescriptorFromVector(MapsActivity.this, R.drawable.sign))).setTitle(station.getName());
+                            .icon(bitmapDescriptorFromVector(MapsActivity.this, R.drawable.ic_taxi_station_2))).setTitle(station.getName());
 
 
                 }
@@ -1785,21 +2088,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         ShowLineAdapter showLineAdapter = new ShowLineAdapter(arrayList, location, MapsActivity.this, new ShowLineAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(View v, int pos, Object object) {
-
+            public void onItemClick(CheckBox checkBox, View v, int pos, Object object) {
                 Line line = (Line) object;
-                try {
-                    //drawLine(line);
-                    getNearestTaxis(line.getId());
-                    // bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
-                    locationUpdate.StartSchedule(MapsActivity.this, 10000, 7);//todo line.getId(
+                if (checkBox.isChecked()) {
+                    try {
+                        drawLine(line);
+                        // getNearestTaxis(line.getId());
+                        // bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
+                        //locationUpdate.StartSchedule(MapsActivityTaxi.this, 10000, 7);//todo line.getId(
 
-                } catch (Exception e) {
-                    Log.d("parisa", e.toString());
-                }
-
+                    } catch (Exception e) {
+                        Log.d("parisa", e.toString());
+                    }
+                } else removeLine(line);
             }
         });
         RecyclerView recyclerView = findViewById(R.id.recycle);
@@ -1904,11 +2207,42 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }//
 
 
+    public void NoLineAlert() {
+        try {
+            Typeface face = Typeface.createFromAsset(getAssets(),
+                    "fonts/IRANSans(FaNum).ttf");
+
+            final MoAlertDialog dialog = new MoAlertDialog(MapsActivity.this);
+
+            dialog.showSuccessDialog("کاربر عزیز", "تا شعاع یک کیلومتری شما خطی ثبت نشده است.");
+
+            dialog.setTypeface(face);
+
+            dialog.setDilogIcon(R.drawable.ic_sad);
+            dialog.setDialogButtonText("باشه");
+            dialog.setOnButtonClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    //initComponent();
+                    dialog.dismis();
+                }
+            });
+        } catch (Exception e) {
+            Log.d("parisa", e.toString());
+        }
+    }
+
+
     @Subscribe
     public void PaymentDialog(PaymentTrackModel model) {
         model.getMessage();
-
-        showTaxi(model.getMessage());
+        for (Marker marker : markers) {
+            marker.remove();
+            //markers.removeAll(markers);
+        }
+        markers.clear();
+        setAlarm(model.getMessage());
 
     }
 
@@ -1923,6 +2257,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //            mp.start();
 //        }
 //    });
+
 
 }
 
