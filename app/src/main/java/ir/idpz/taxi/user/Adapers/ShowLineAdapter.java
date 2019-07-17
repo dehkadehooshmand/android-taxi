@@ -74,6 +74,7 @@ public class ShowLineAdapter extends RecyclerView.Adapter<ShowLineAdapter.MyView
 
         for (Station station : line.getStations()) {
 
+            if (station.getName()!=null)
             if (station.getName() != "" && station.getName() != holder.txtEndPoint.getText().toString() && station.getName() != holder.txtStartPoint.getText().toString()) {
                 stations.add(station);
             }

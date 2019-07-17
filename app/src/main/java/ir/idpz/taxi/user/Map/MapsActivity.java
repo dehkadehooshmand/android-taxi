@@ -214,7 +214,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.navigation_drawer);
 
 
-        checkBox=findViewById(R.id.check);
+        checkBox = findViewById(R.id.check);
         name = findViewById(R.id.name);
 
         title = findViewById(R.id.title);
@@ -618,7 +618,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (!flag) {
 //---------------------------------------------------area hay mokhtalef ra migirad va ba tavajo be makan kononni karbar area karbar ra bar migardanad------------------------------
                     if (Helpers.isNetworkAvailable(AppController.getAppContext()))
-                        getAreas();
+                        //   getAreas();
+                        getStations(1);
 
                     else Helpers.noInternetDialog();
 
@@ -636,7 +637,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Location mLocation = new Location("");
                     mLocation.setLatitude(mCenterLatLong.latitude);
                     mLocation.setLongitude(mCenterLatLong.longitude);
-
                     startIntentService(mLocation);
 
                 } catch (Exception e) {
@@ -1163,8 +1163,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //-----------------------------------------area karbar ra bamigardanad--------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-----------------------------------------area karbar ra bamigardanad--------------------------------------------------------------------------------------------------------------
     public void findArea() {
 
 
@@ -1189,6 +1189,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (Helpers.isNetworkAvailable(AppController.getAppContext()))
             getStations(minIndex);//todo minIndex
+
+
         else Helpers.noInternetDialog();
 
         Log.d("pariarea", "findArea: " + areaArrayList.get(minIndex).getId().toString());
@@ -1203,7 +1205,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
          */
 
         RequestParams params = new RequestParams();
-        params.put("id", 20);
+        // params.put("id", id);
+        params.put("lat", mCenterLatLong.latitude);
+        params.put("lng", mCenterLatLong.longitude);
+
         params.put("api_token", Helpers.getSharePrf("api_token"));
         Helpers.client.post("http://admin.idpz.ir/api/getlines", params, new TextHttpResponseHandler() {
             @Override
@@ -2057,15 +2062,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (Line line : lines) {
 
             for (Station station : line.getStations()) {
+                if (station.getName() != null)
+                    if (!station.getName().equals("")) {
 
-                if (!station.getName().equals("")) {
-
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(station.getLat(), station.getLng()))
-                            .icon(bitmapDescriptorFromVector(MapsActivity.this, R.drawable.ic_taxi_station_2))).setTitle(station.getName());
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(station.getLat(), station.getLng()))
+                                .icon(bitmapDescriptorFromVector(MapsActivity.this, R.drawable.ic_taxi_station_2))).setTitle(station.getName());
 
 
-                }
+                    }
 
             }
 

@@ -76,9 +76,9 @@ public class LocationUpdate implements GoogleApiClient.ConnectionCallbacks, Goog
                 mGoogleApiClient);
         if (isNetworkAvailable(AppController.getAppContext()))
 
-            //CreateNode();
 
-            getNearestTaxis(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+
+            getNearestTaxis();
         else noInternetDialog();
 
     }
@@ -156,9 +156,12 @@ public class LocationUpdate implements GoogleApiClient.ConnectionCallbacks, Goog
     }
 
 
-    public void getNearestTaxis(double lat, double lng) {
+    public void getNearestTaxis() {
         RequestParams params = new RequestParams();
+        GPSTracker gps = new GPSTracker(mAct);
 
+        double lat = gps.getLatitude();
+        double lng = gps.getLongitude();
         params.put("lat", lat);
         params.put("lng", lng);
         params.put("car", "0");
@@ -174,9 +177,14 @@ public class LocationUpdate implements GoogleApiClient.ConnectionCallbacks, Goog
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 //    Toast.makeText(MapsActivity.this, responseString.toString(), Toast.LENGTH_SHORT).show();
-                Log.d("latlng", responseString);
 
-                EventBus.getDefault().post(new PaymentTrackModel(responseString));
+                try {
+                    Log.d("latlng", responseString);
+
+
+                    EventBus.getDefault().post(new PaymentTrackModel(responseString));
+                } catch (Exception e) {
+                }
             }
         });
     }
